@@ -17,7 +17,7 @@ except (FileNotFoundError, KeyError) as e:
 
 # define the access that the Oauth Provides from SpotifyAPI
 SCOPE = "user-library-read playlist-read-private playlist-read-collaborative"
-ATTRIBUTES = ['name','artists.name','album.name','album.album_type','album.release_date','duration_ms']
+ATTRIBUTES = ['id','name','artists.name','album.name','album.album_type','album.release_date','duration_ms']
 
 
 # setup authmanager for authorization
@@ -159,9 +159,39 @@ def get_tracks_to_df(ID:str,attributes:list[str],sp_instance:spotipy.Spotify=sp)
 
 df=get_tracks_to_df(ID,ATTRIBUTES,sp) 
 
-try:
-    df.to_excel('spotify-data.xlsx', index=False) 
-    print("DataFrame successfully saved to spotify-data.xlsx")
-except Exception as e:
-    print(f"Error saving DataFrame to Excel: {e}")
+
+def get_excel(df:pd.DataFrame,update:str=None):
+    if update is None:
+        try:
+            df.to_excel('spotify-data.xlsx', index=False,sheet_name='AllSongs') 
+            print("DataFrame successfully saved to spotify-data.xlsx")
+        except Exception as e:
+            print(f"Error saving DataFrame to Excel: {e}")
+    else:
+        old_df=pd.read_excel(update,sheet_name='AllSongs')
+        old_track_id_series = old_df['id']
+        new_track_id_series = df['id']
+        old_ids_set = set(old_track_id_series)
+        new_ids_set = set(new_track_id_series)
+        missing_from_new_ids_set = old_ids_set - new_ids_set  
+        newly_added_ids_set = new_ids_set - old_ids_set      
+        missing_df=old_df[old_df['id'].isin(missing_from_new_ids_set)]
+        newly_added_df=df[df['id'].isin(newly_added_ids_set)]
+        if not missing_df.empty:
+            main_df=pd.concat([df, missing_df], ignore_index=True)
+        else:
+            main_df=df.copy()
+        output_path=update[:-5]+'-udpated'+'.xlsx'
+        with pd.ExcelWriter(output_path) as writer:
+            main_df.to_excel(writer,sheet_name='AllSongs',index=False)
+            if not missing_df.empty:
+                missing_df.to_excel(writer,sheet_name='missing-songs')
+            else:
+                df.to_excel(writer,sheet_name='missing-songs')
+            if not newly_added_df.empty:
+                newly_added_df.to_excel(writer,sheet_name='newly-added')
+            else:
+                df.to_excel(writer,sheet_name='newly-added')
+
+get_excel(df,'spotify-data.xlsx')
 
