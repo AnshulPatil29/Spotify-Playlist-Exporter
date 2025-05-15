@@ -1,5 +1,11 @@
-/.cache
-/spotify-data.xlsx
-/spotify-data-udpated.xlsx
-/~$*
-/build
+# PyInstaller
+/dist/
+/build/
+__pycache__/
+*.py[cod]
+*$py.class
+.cache
+.vscode/
+.idea/
+venv/
+*.env
