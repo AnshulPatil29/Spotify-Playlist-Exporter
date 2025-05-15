@@ -4,8 +4,21 @@ import pandas as pd
 import json
 import tkinter as tk 
 from tkinter import filedialog, messagebox 
+import sys 
+import os 
 
-CONFIG_FILE = 'config.json' 
+# helper function for pyinstaller
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+
+CONFIG_FILE = resource_path('config.json')
 CLIENT_ID = None
 REDIRECT_URI = None
 
@@ -369,7 +382,7 @@ if __name__ == "__main__":
             root_error.destroy()
         except tk.TclError: 
             print(f"FATAL UI ERROR: Could not show Tkinter messagebox for missing config. Check '{CONFIG_FILE}'.")
-        exit() 
+        sys.exit() 
 
     root = tk.Tk() 
     app = SpotifyExporterApp(root) 
