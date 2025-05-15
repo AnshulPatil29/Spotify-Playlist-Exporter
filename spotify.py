@@ -1,35 +1,33 @@
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyPKCE
 import pandas as pd
 import json
-
 # import client id, secret and URI from config.json
 try:
     with open('config.json','r') as f:
         spotify_data=json.load(f)['SPOTIFY']
     CLIENT_ID=spotify_data['CLIENT_ID']
-    CLIENT_SECRET=spotify_data['CLIENT_SECRET']
     REDIRECT_URI=spotify_data['REDIRECT_URI']
 except (FileNotFoundError, KeyError) as e:
     print(f"Error loading configuration from config.json: {e}")
     exit()
     
-
 # define the access that the Oauth Provides from SpotifyAPI
 SCOPE = "user-library-read playlist-read-private playlist-read-collaborative"
 ATTRIBUTES = ['id','name','artists.name','album.name','album.album_type','album.release_date','duration_ms']
 
-
+# ------------------------------------------------------------------------------------------------------------------
 # setup authmanager for authorization
 # note that this does not call the API,this just sets it up for later
-auth_manager=SpotifyOAuth(
+auth_manager=SpotifyPKCE(
     client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
     redirect_uri=REDIRECT_URI,
-    scope=SCOPE
+    scope=SCOPE,
+    open_browser=True
 ) 
+auth_manager.get_access_token()
 sp = spotipy.Spotify(auth_manager=auth_manager)
-
+# ------------------------------------------------------------------------------------------------------------------
 
 def id_helper_name(playlist_name:str,sp_instance:spotipy.Spotify=sp)->str:
     results = sp_instance.current_user_playlists(limit=50)
@@ -43,11 +41,9 @@ def id_helper_name(playlist_name:str,sp_instance:spotipy.Spotify=sp)->str:
             results = sp_instance.next(results)
         else:
             return None
-        
+                
 def id_helper_url(playlist_url:str)->str:
     return playlist_url[34:56]
-
-
 
 def get_playlist_id(playlist:str,sp_instance:spotipy.Spotify=sp)->str:
     '''
@@ -65,13 +61,7 @@ def get_playlist_id(playlist:str,sp_instance:spotipy.Spotify=sp)->str:
         print('Playlist not found')
         return None
     return result
-
-playlist_input=input('Enter playlist name or link, or leave it empty for liked songs: ')
-ID=get_playlist_id(playlist_input)
-while ID is None:
-    playlist_input=input('Invalid Input Try Again')
-    ID=get_playlist_id(playlist_input)
-
+# ------------------------------------------------------------------------------------------------------------------
 # now we can fetch songs
 
 def get_tracks_to_df(ID:str,attributes:list[str],sp_instance:spotipy.Spotify=sp)->pd.DataFrame:
@@ -155,8 +145,12 @@ def get_tracks_to_df(ID:str,attributes:list[str],sp_instance:spotipy.Spotify=sp)
     for column,data in zip(output_columns,data_lists):
         dataframe[column]=data
     return pd.DataFrame(dataframe)
-
-
+# ------------------------------------------------------------------------------------------------------------------
+playlist_input=input('Enter playlist name or link, or leave it empty for liked songs: ')
+ID=get_playlist_id(playlist_input)
+while ID is None:
+    playlist_input=input('Invalid Input Try Again')
+    ID=get_playlist_id(playlist_input)
 df=get_tracks_to_df(ID,ATTRIBUTES,sp) 
 
 
@@ -193,5 +187,5 @@ def get_excel(df:pd.DataFrame,update:str=None):
             else:
                 df.to_excel(writer,sheet_name='newly-added')
 
-get_excel(df,'spotify-data.xlsx')
+get_excel(df)
 
