@@ -22,7 +22,7 @@ A simple desktop application built with Python, Tkinter, Spotipy, and Pandas tha
 ## Installation (for End-Users)
 
 1. **Download the latest release:**
-   * Go to the [Releases Page](https://github.com/[YourGitHubUsername]/[YourRepositoryName]/releases/latest).
+   * Go to the [Releases Page](https://github.com/AnshulPatil29/Spotify-Playlist-Exporter/releases).
    * Download the `SpotifyPlaylistExporter.exe` file (or the `.zip` file if you provide a one-folder bundle).
 2. **Place the EXE:**
    * Move `SpotifyPlaylistExporter.exe` to any convenient location on your computer (e.g., your Desktop or a dedicated applications folder).
