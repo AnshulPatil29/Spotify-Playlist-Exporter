@@ -4,6 +4,11 @@
 
 A simple desktop application built with Python, Tkinter, Spotipy, and Pandas that allows you to fetch track details from your Spotify playlists (or your "Liked Songs") and export them into a structured Excel file. Features include selecting specific track attributes and updating existing Excel files with new/missing songs.
 
+## Disclaimer
+* This app will currently only work if I whitelist a user as it runs in development mode.
+* Which is why I highly recommend anyone who is interested on using this application to download the files from the `local-app` branch. You only need the spotify.py and config.py, and need to setup the config and dev dashboard for Spotify API
+* This is currently a work in progress
+
 ## Features
 
 * **Export Liked Songs:** Easily download details of all your liked tracks.
@@ -22,7 +27,7 @@ A simple desktop application built with Python, Tkinter, Spotipy, and Pandas tha
 ## Installation (for End-Users)
 
 1. **Download the latest release:**
-   * Go to the [Releases Page](https://github.com/[YourGitHubUsername]/[YourRepositoryName]/releases/latest).
+   * Go to the [Releases Page](https://github.com/AnshulPatil29/Spotify-Playlist-Exporter/releases).
    * Download the `SpotifyPlaylistExporter.exe` file (or the `.zip` file if you provide a one-folder bundle).
 2. **Place the EXE:**
    * Move `SpotifyPlaylistExporter.exe` to any convenient location on your computer (e.g., your Desktop or a dedicated applications folder).
@@ -120,7 +125,10 @@ If you want to modify the code or build the executable yourself:
    
    * The executable will be found in the `dist/` folder.
 
-<!-- Make sure you actually create a LICENSE.md file with the MIT license text -->
+## Future Work
+- Need to update the front end to not give option of removing id from possible attributes as it is required for playlist update feature
+- Need to add a feature to create a playlist based on an excel file with song ID's
+
 
 ## Acknowledgements
 
