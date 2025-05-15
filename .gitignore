@@ -1,5 +1,5 @@
 # PyInstaller
-/dist/
+/dist
 /build/
 __pycache__/
 *.py[cod]
@@ -9,3 +9,4 @@ __pycache__/
 .idea/
 venv/
 *.env
+*.spec

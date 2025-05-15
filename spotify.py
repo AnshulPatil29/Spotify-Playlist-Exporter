@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox 
 import sys 
 import os 
+from appdirs import user_cache_dir
 
 # helper function for pyinstaller
 def resource_path(relative_path):
@@ -21,6 +22,17 @@ def resource_path(relative_path):
 CONFIG_FILE = resource_path('config.json')
 CLIENT_ID = None
 REDIRECT_URI = None
+
+APP_NAME = "SpotifyPlaylistExporter"
+APP_AUTHOR = "MySpotifyTools"
+CACHE_DIR = user_cache_dir(APP_NAME, APP_AUTHOR)
+if not os.path.exists(CACHE_DIR):
+    try:
+        os.makedirs(CACHE_DIR)
+    except OSError as e:
+        print(f"Warning: Could not create cache directory at {CACHE_DIR}: {e}")
+        CACHE_DIR = "." 
+SPOTIFY_CACHE_PATH = os.path.join(CACHE_DIR, '.spotify_pkce_cache')
 
 try:
     with open(CONFIG_FILE, 'r') as f:
@@ -42,7 +54,7 @@ def initialize_spotify_auth()->bool:
     Attempts to get an access token.
     Returns True on success, False on failure.
     """
-    global auth_manager_global, sp_global, CLIENT_ID, REDIRECT_URI, SCOPE
+    global auth_manager_global, sp_global, CLIENT_ID, REDIRECT_URI, SCOPE, SPOTIFY_CACHE_PATH
 
     if not CLIENT_ID or not REDIRECT_URI: 
         messagebox.showerror("Configuration Error", "Client ID or Redirect URI is missing. Please check config.json.")
@@ -54,7 +66,7 @@ def initialize_spotify_auth()->bool:
             redirect_uri=REDIRECT_URI,
             scope=SCOPE,
             open_browser=True,
-            cache_path='.cache'
+            cache_path=SPOTIFY_CACHE_PATH
         )
         token_info = auth_manager_global.get_access_token() 
         if not token_info:
@@ -223,6 +235,14 @@ class SpotifyExporterApp:
         """
         self.root = root_window
         self.root.title("Spotify Playlist Exporter")
+        try:
+        # Use resource_path to find the bundled icon
+            icon_path = resource_path('app_icon.ico')
+            self.root.iconbitmap(icon_path)
+        except tk.TclError:
+            # This can happen if the .ico file is not found, corrupt,
+            # or on some OS configurations.
+            print("Warning: Could not set window icon. Ensure 'app_icon.ico' is bundled correctly.")
         # stores boolean variable for checkboxes
         self.attribute_vars = {} 
         self.is_authenticated = False 
@@ -382,7 +402,7 @@ if __name__ == "__main__":
             root_error.destroy()
         except tk.TclError: 
             print(f"FATAL UI ERROR: Could not show Tkinter messagebox for missing config. Check '{CONFIG_FILE}'.")
-        sys.exit() 
+        sys.exit(1) 
 
     root = tk.Tk() 
     app = SpotifyExporterApp(root) 
