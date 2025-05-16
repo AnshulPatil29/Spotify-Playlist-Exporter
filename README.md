@@ -5,7 +5,7 @@
 A simple desktop application built with Python, Tkinter, Spotipy, and Pandas that allows you to fetch track details from your Spotify playlists (or your "Liked Songs") and export them into a structured Excel file. Features include selecting specific track attributes and updating existing Excel files with new/missing songs.
 
 ## UI
-![UI](Images\UI.png)
+![UI](Images/UI.png)
 
 ## Disclaimer
 * This app will currently only work if I whitelist a user as it runs in development mode.
