@@ -130,7 +130,6 @@ If you want to modify the code or build the executable yourself:
 
 ## Future Work
 - Need to update the front end to not give option of removing id from possible attributes as it is required for playlist update feature
-- Need to add a feature to create a playlist based on an excel file with song ID's
 
 
 ## Acknowledgements
