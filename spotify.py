@@ -42,7 +42,7 @@ try:
 except (FileNotFoundError, KeyError) as e:
     print(f"CRITICAL ERROR: Error loading configuration from {CONFIG_FILE}: {e}")
 
-SCOPE = "user-library-read playlist-read-private playlist-read-collaborative"
+SCOPE = "user-library-read playlist-read-private playlist-read-collaborative playlist-modify-private"
 DEFAULT_ATTRIBUTES = ['id', 'name', 'artists.name', 'album.name', 'album.album_type', 'album.release_date', 'duration_ms']
 
 sp_global = None
@@ -288,9 +288,18 @@ class SpotifyExporterApp:
         tk.Label(playlist_frame, text="Playlist Name/Link (or blank for Liked Songs):").pack(side=tk.LEFT, padx=(0,5))
         self.playlist_entry = tk.Entry(playlist_frame) 
         self.playlist_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
         update_frame = tk.LabelFrame(self.root, text="Update Existing Excel (Optional)", padx=10, pady=5)
         update_frame.pack(fill=tk.X, padx=10, pady=5)
+        create_playlist_frame = tk.LabelFrame(self.root, text="Create Playlist from Excel", padx=10, pady=5)
+        create_playlist_frame.pack(fill=tk.X, padx=10, pady=10)
+        tk.Label(create_playlist_frame, text="New Playlist Name:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.new_playlist_name_entry = tk.Entry(create_playlist_frame, width=40)
+        self.new_playlist_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.create_playlist_button = tk.Button(create_playlist_frame, text="Select Excel & Create Playlist", command=self._trigger_create_playlist_from_excel)
+        self.create_playlist_button.grid(row=1, column=0, columnspan=2, pady=10)
+        create_playlist_frame.columnconfigure(1, weight=1)  
+
+
 
         self.update_path_var = tk.StringVar()
         update_path_display = tk.Entry(update_frame, textvariable=self.update_path_var, state='readonly', width=50)
@@ -391,6 +400,71 @@ class SpotifyExporterApp:
         self.root.update_idletasks()
         export_data_to_excel(current_df, update_excel_path=update_file_path) 
         self.status_var.set("Export process finished. Ready for next operation.")
+
+    def _trigger_create_playlist_from_excel(self):
+        if not self.is_authenticated or not sp_global:
+            messagebox.showerror("Not Authenticated", "Please authenticate with Spotify first using the Login button.")
+            self._update_ui_auth_state()
+            return
+
+        new_playlist_name = self.new_playlist_name_entry.get().strip()
+        if not new_playlist_name:
+            messagebox.showwarning("Input Required", "Please enter a name for the new playlist.")
+            return
+
+        excel_path = filedialog.askopenfilename(
+            title="Select Excel file with track IDs",
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx"), ("Excel files (old)", "*.xls"), ("All files", "*.*")]
+        )
+
+        if not excel_path:
+            self.status_var.set("Playlist creation cancelled: No file selected.")
+            return
+
+        self.status_var.set(f"Processing: Reading track IDs from {excel_path.split('/')[-1]}...")
+        self.root.update_idletasks()
+
+        try:
+            df = pd.read_excel(excel_path)
+            if 'id' not in df.columns:
+                messagebox.showerror("Error", "Excel file must contain an 'id' column with Spotify track IDs.")
+                self.status_var.set("Error: 'id' column missing in Excel. Ready.")
+                return
+
+            track_ids = df['id'].dropna().astype(str).tolist()
+            track_ids = [tid for tid in track_ids if tid]
+
+            if not track_ids:
+                messagebox.showinfo("No Track IDs", "No track IDs found in the 'id' column of the selected Excel file.")
+                self.status_var.set("No track IDs found. Ready.")
+                return
+
+            self.status_var.set(f"Creating playlist '{new_playlist_name}' and adding {len(track_ids)} tracks...")
+            self.root.update_idletasks()
+
+            user_id = sp_global.me()['id']
+            new_playlist = sp_global.user_playlist_create(user=user_id, name=new_playlist_name, public=False)
+            new_playlist_id = new_playlist['id']
+
+            for i in range(0, len(track_ids), 100):
+                batch = track_ids[i:i + 100]
+                sp_global.playlist_add_items(new_playlist_id, batch)
+            
+            playlist_url = new_playlist['external_urls'].get('spotify', 'N/A')
+            messagebox.showinfo("Success", f"Playlist '{new_playlist_name}' created successfully with {len(track_ids)} tracks.\nURL: {playlist_url}")
+            self.status_var.set(f"Playlist '{new_playlist_name}' created. Ready.")
+            self.new_playlist_name_entry.delete(0, tk.END)
+
+        except FileNotFoundError:
+            messagebox.showerror("File Not Found", f"The file {excel_path} was not found.")
+            self.status_var.set("Error: File not found. Ready.")
+        except pd.errors.EmptyDataError:
+            messagebox.showerror("Empty File", "The selected Excel file is empty or has no sheets to read.")
+            self.status_var.set("Error: Empty Excel file. Ready.")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred during playlist creation: {e}")
+            self.status_var.set(f"Error creating playlist: {e}. Ready.")
 
 if __name__ == "__main__":
     if not CLIENT_ID or not REDIRECT_URI:
